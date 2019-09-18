@@ -61,6 +61,7 @@ then
   read -p "INSTALLATION_SCRIPT: bridge network GATEWAY: " brgway
   read -p "INSTALLATION_SCRIPT: bridge network MASK: " brmask
   cat << EOT > /etc/sysconfig/network-scripts/ifcfg-$brname
+STP=no
 TYPE=Bridge
 DEVICE=$brname
 NAME="$brname"
@@ -71,18 +72,16 @@ BROADCAST=192.168.1.255
 DNS1=8.8.8.8
 DNS2=1.1.1.1
 MTU=1500
-DEFROUTE=yes
-IPV4_FAILURE_FATAL=yes
-BOOTPROTO=none
 ONBOOT=yes
+BOOTPROTO=none
 IPV6INIT=no
 EOT
 
   read -p "INSTALLATION_SCRIPT: bridge slave device name: " slavename
   cat << EOT > /etc/sysconfig/network-scripts/ifcfg-$slavename
 TYPE=Ethernet
-NAME="slavename"
-DEVICE=slavename
+NAME="$slavename-slave"
+DEVICE=$slavename
 ONBOOT=yes
 BRIDGE=$brname
 EOT
