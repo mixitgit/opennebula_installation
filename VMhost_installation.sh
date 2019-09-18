@@ -35,6 +35,60 @@ echo -e "${oneadmin_password}\n${oneadmin_password}" | passwd oneadmin
 
 read -p "INSTALLATION_SCRIPT: Now reboot the machine and proceed to SSH configuration from frontend-node [ENTER] " q
 
+read -p "INSTALLATION_SCRIPT: Do you want to PERMANENTLY DISABLE firewalld? [y/n]" q
+
+if [[ $q == y ]]
+    then
+      systemctl stop firewalld
+      systemctl disable firewalld
+
+    else
+      echo "INSTALLATION_SCRIPT: adding port to firewall"
+firewall-cmd --permanent --add-port=9869/tcp
+firewall-cmd --permanent --add-port=29876/tcp
+firewall-cmd --reload
+systemctl restart firewalld
+firewall-cmd --list-ports
+
+fi
+
+read -p "INSTALLATION_SCRIPT: Do you want to install a network bridge? [y/n]: " q
+
+if [[ $q == y ]]
+then
+  read -p "INSTALLATION_SCRIPT: bridge interface name: " brname
+  read -p "INSTALLATION_SCRIPT: bridge network IP: " brip
+  read -p "INSTALLATION_SCRIPT: bridge network GATEWAY: " brgway
+  read -p "INSTALLATION_SCRIPT: bridge network MASK: " brmask
+  cat << EOT > /etc/sysconfig/network-scripts/ifcfg-$brname
+TYPE=Bridge
+DEVICE=$brname
+NAME="$brname"
+IPADDR=$brip
+GATEWAY=$brgway
+NETMASK=$brmask
+BROADCAST=192.168.1.255
+DNS1=8.8.8.8
+DNS2=1.1.1.1
+MTU=1500
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=yes
+BOOTPROTO=none
+ONBOOT=yes
+IPV6INIT=no
+EOT
+
+  read -p "INSTALLATION_SCRIPT: bridge slave device name: " slavename
+  cat << EOT > /etc/sysconfig/network-scripts/ifcfg-$slavename
+TYPE=Ethernet
+NAME="slavename"
+DEVICE=slavename
+ONBOOT=yes
+BRIDGE=$brname
+EOT
+
+fi
+
 reboot
 
 #total interruptions = 3
