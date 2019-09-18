@@ -113,11 +113,23 @@ fi
 if [[ ${part} == 4 ]]
 then
     read -p "INSTALLATION_SCRIPT: finishing frontend installation [ENTER] " q
-    echo "INSTALLATION_SCRIPT: adding port to firewall"
-    firewall-cmd --permanent --add-port=9869/tcp
-    firewall-cmd --reload
-    systemctl restart firewalld
-    firewall-cmd --list-ports
+
+    read -p "INSTALLATION_SCRIPT: Do you want to PERMANENTLY DISABLE firewalld? [y/n]" q
+
+    if [[ $q == y ]]
+    then
+      systemctl stop firewalld
+      systemctl disable firewalld
+
+    else
+      echo "INSTALLATION_SCRIPT: adding port to firewall"
+      firewall-cmd --permanent --add-port=9869/tcp
+      firewall-cmd --permanent --add-port=29876/tcp
+      firewall-cmd --reload
+      systemctl restart firewalld
+      firewall-cmd --list-ports
+
+    fi
 
     echo "INSTALLATION_SCRIPT: starting services"
     systemctl start opennebula
@@ -144,19 +156,24 @@ then
 
     read -p "INSTALLATION SCRIPT: Fronend node ip: " frontend_ip
     read -p "INSTALLATION SCRIPT: VM Node IPs divided by ' ': " hosts_ip
-    sudo -u oneadmin ssh-keyscan ${frontend_ip} ${hosts_ip} >> /var/lib/one/.ssh/known_hosts
+    #sudo -u oneadmin /var/lib/one/.ssh/known_hosts
+    sudo -u oneadmin ssh-keyscan ${frontend_ip} ${hosts_ip} | sudo -u oneadmin tee -a /var/lib/one/.ssh/known_hosts
 
     read -p "INSTALLATION_SCRIPT: specify oneadmin password: " oneadmin_password
     echo -e "${oneadmin_password}\n${oneadmin_password}" | passwd oneadmin
 
+
     for host in ${hosts_ip}
     do
         sudo -u oneadmin scp -rp /var/lib/one/.ssh ${host}:/var/lib/one/ << EOF
+ye
+EOF
+        sudo -u oneadmin scp -rp frontend.localdomain:/var/lib/one/.ssh ${host}:/var/lib/one/ << EOF
 yes
-
-${oneadmin_password}
-
 EOF
         done
+
+read -p "INSTALLATION_SCRIPT: OpenNebula installation is finished, rebooting the device"
+reboot
 
 fi

@@ -1,0 +1,5 @@
+TYPE=Ethernet
+NAME="enp7s0"
+DEVICE=enp7s0
+ONBOOT=yes
+BRIDGE=onebr0
